@@ -102,26 +102,26 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col items-center py-10 px-4 sm:px-6">
+    <div className="h-screen w-screen bg-gray-950 text-gray-100 flex flex-col items-center py-4 px-4 sm:px-6 overflow-hidden">
       
       {/* Header */}
-      <header className="mb-10 text-center space-y-2">
-        <h1 className="text-5xl md:text-6xl font-pixel text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400 drop-shadow-lg">
+      <header className="mb-4 text-center space-y-1 flex-shrink-0">
+        <h1 className="text-4xl md:text-5xl font-pixel text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400 drop-shadow-lg">
           PIXEL CRAFT AI
         </h1>
-        <p className="text-gray-400 max-w-lg mx-auto">
+        <p className="text-gray-400 max-w-lg mx-auto text-sm">
           將照片轉換為復古 16 位元精靈圖，或使用 AI 生成新素材。
         </p>
       </header>
 
       {/* Main Container */}
-      <main className="w-full max-w-6xl bg-gray-900/50 backdrop-blur-sm rounded-3xl border border-gray-800 shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[600px]">
+      <main className="w-full max-w-6xl bg-gray-900/50 backdrop-blur-sm rounded-3xl border border-gray-800 shadow-2xl overflow-hidden flex flex-col md:flex-row flex-1 min-h-0">
         
         {/* Left Sidebar: Controls */}
-        <div className="w-full md:w-80 lg:w-96 p-6 border-b md:border-b-0 md:border-r border-gray-800 flex flex-col gap-6 bg-gray-900/80">
+        <div className="w-full md:w-80 lg:w-96 p-5 border-b md:border-b-0 md:border-r border-gray-800 flex flex-col gap-5 bg-gray-900/80 overflow-y-auto">
             
             {/* Tabs */}
-            <div className="flex p-1 bg-gray-800 rounded-xl">
+            <div className="flex p-1 bg-gray-800 rounded-xl flex-shrink-0">
                 <button
                     onClick={() => setActiveTab(Tab.UPLOAD)}
                     className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
@@ -176,9 +176,9 @@ const App: React.FC = () => {
                     </p>
                 </div>
             ) : (
-                <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="flex flex-col gap-5 animate-in fade-in slide-in-from-right-4 duration-300 pb-2">
                     {/* Settings Panel */}
-                    <div className="space-y-6">
+                    <div className="space-y-5">
                         <Slider 
                             label="網格大小" 
                             value={settings.gridSize} 
@@ -231,7 +231,7 @@ const App: React.FC = () => {
                     </div>
 
                     {originalImage && (
-                         <div className="pt-4 border-t border-gray-800">
+                         <div className="pt-2 border-t border-gray-800">
                              <Button 
                                 variant="secondary" 
                                 className="w-full"
@@ -247,7 +247,7 @@ const App: React.FC = () => {
         </div>
 
         {/* Right Area: Workspace */}
-        <div className="flex-1 p-6 md:p-10 bg-black/20 flex flex-col items-center justify-center relative min-h-[500px]">
+        <div className="flex-1 p-6 bg-black/20 flex flex-col items-center justify-center relative overflow-hidden">
             {originalImage && pixelatedSrc ? (
                  <PixelPreview 
                     src={pixelatedSrc} 
@@ -263,11 +263,6 @@ const App: React.FC = () => {
         </div>
 
       </main>
-
-      {/* Footer */}
-      <footer className="mt-12 text-gray-600 text-sm">
-        <p>&copy; 2024 PixelCraft AI. 使用 React & Gemini 建置。</p>
-      </footer>
     </div>
   );
 };
