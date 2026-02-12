@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Download, Move, ZoomIn } from 'lucide-react';
+import { Download, Move, ZoomIn, Eye, X } from 'lucide-react';
 import { Button } from './Button';
 import { downloadImage } from '../utils/imageUtils';
 import { ImageTransform } from '../types';
@@ -20,6 +20,7 @@ export const PixelPreview: React.FC<PixelPreviewProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   // Drawing Logic
   useEffect(() => {
@@ -91,24 +92,6 @@ export const PixelPreview: React.FC<PixelPreviewProps> = ({
     if (!isDragging) return;
     
     // Pan Logic
-    // We need to scale the movement speed inversely to the zoom level
-    // so panning feels consistent at different zoom levels.
-    // Note: We don't have access to the current scale easily here without props, 
-    // but we can adjust sensitivity heuristically or pass scale down if needed.
-    // For now, raw pixel movement works reasonably well if handled in imageUtils.
-    
-    // Since pixelateImage logic subtracts transform.x/y, positive movementX (right)
-    // should add to x to move the image right.
-    
-    // To make it feel like "grabbing the image", moving mouse right should move image right.
-    // In our imageUtils logic: sx = center - x.
-    // If we increase x, sx decreases, moving the crop window left, which makes the image appear to move right.
-    // Perfect.
-    
-    // We can multiply by a factor to make it faster/slower relative to source image size
-    // But since we don't know source image size here, we send raw screen deltas.
-    // However, if the source image is huge (4000px), moving 1px might be too slow.
-    // Let's apply a multiplier.
     const sensitivity = 2; 
 
     onTransformChange(prev => ({
@@ -137,50 +120,109 @@ export const PixelPreview: React.FC<PixelPreviewProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-center w-full" ref={containerRef}>
-      <div className="flex items-center gap-2 mb-2 text-xs text-gray-400">
-         <Move size={12} /> <span>拖曳移動</span>
-         <span className="mx-1">|</span>
-         <ZoomIn size={12} /> <span>滾輪縮放</span>
-      </div>
-      
-      <div 
-        className={`relative rounded-lg overflow-hidden shadow-2xl shadow-indigo-500/20 bg-[#1a1b26] border border-gray-800 touch-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-        onWheel={handleWheel}
-        onMouseDown={handleMouseDown}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseLeave}
-        onMouseMove={handleMouseMove}
-      >
-          {/* Checkerboard background */}
-          <div className="absolute inset-0 opacity-20 pointer-events-none" 
-              style={{
-                  backgroundImage: 'linear-gradient(45deg, #333 25%, transparent 25%), linear-gradient(-45deg, #333 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #333 75%), linear-gradient(-45deg, transparent 75%, #333 75%)',
-                  backgroundSize: '20px 20px',
-                  backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
-              }} 
-          />
-          <canvas ref={canvasRef} className="relative z-10 block max-w-full pointer-events-none" style={{ imageRendering: 'pixelated' }} />
+    <>
+      <div className="flex flex-col items-center w-full" ref={containerRef}>
+        <div className="flex items-center gap-2 mb-2 text-xs text-gray-400">
+           <Move size={12} /> <span>拖曳移動</span>
+           <span className="mx-1">|</span>
+           <ZoomIn size={12} /> <span>滾輪縮放</span>
+        </div>
+        
+        <div 
+          className={`relative rounded-lg overflow-hidden shadow-2xl shadow-indigo-500/20 bg-[#1a1b26] border border-gray-800 touch-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+          onWheel={handleWheel}
+          onMouseDown={handleMouseDown}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
+          onMouseMove={handleMouseMove}
+        >
+            {/* Checkerboard background */}
+            <div className="absolute inset-0 opacity-20 pointer-events-none" 
+                style={{
+                    backgroundImage: 'linear-gradient(45deg, #333 25%, transparent 25%), linear-gradient(-45deg, #333 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #333 75%), linear-gradient(-45deg, transparent 75%, #333 75%)',
+                    backgroundSize: '20px 20px',
+                    backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
+                }} 
+            />
+            <canvas ref={canvasRef} className="relative z-10 block max-w-full pointer-events-none" style={{ imageRendering: 'pixelated' }} />
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setShowPreview(true)}
+              icon={<Eye size={16}/>}
+              className="bg-gray-800/50 text-indigo-300 hover:bg-gray-800 hover:text-indigo-200"
+          >
+              預覽 (1.3")
+          </Button>
+          <Button 
+              variant="secondary" 
+              size="sm" 
+              onClick={() => handleDownload(1)}
+              icon={<Download size={16}/>}
+          >
+              小圖 (1x)
+          </Button>
+          <Button 
+              variant="primary" 
+              size="sm" 
+              onClick={() => handleDownload(32)}
+              icon={<Download size={16}/>}
+          >
+              高清 (32x)
+          </Button>
+        </div>
       </div>
 
-      <div className="flex gap-3 mt-6">
-        <Button 
-            variant="secondary" 
-            size="sm" 
-            onClick={() => handleDownload(1)}
-            icon={<Download size={16}/>}
-        >
-            小圖 (1x)
-        </Button>
-        <Button 
-            variant="primary" 
-            size="sm" 
-            onClick={() => handleDownload(32)}
-            icon={<Download size={16}/>}
-        >
-            高清 (32x)
-        </Button>
-      </div>
-    </div>
+      {/* 1.3 Inch Preview Modal */}
+      {showPreview && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4" onClick={() => setShowPreview(false)}>
+            <div 
+                className="bg-gray-900 border border-gray-700 rounded-2xl p-8 flex flex-col items-center gap-6 shadow-2xl relative max-w-sm w-full animate-in fade-in zoom-in-95 duration-200" 
+                onClick={e => e.stopPropagation()}
+            >
+                <button 
+                    onClick={() => setShowPreview(false)}
+                    className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors"
+                >
+                    <X size={20} />
+                </button>
+                
+                <div className="text-center space-y-1">
+                    <h3 className="text-xl font-bold text-white font-pixel tracking-wide">實體預覽</h3>
+                    <p className="text-gray-400 text-sm">模擬 1.3 吋顯示器效果</p>
+                </div>
+
+                {/* Simulation Container */}
+                <div className="relative bg-black rounded-lg border-[6px] border-gray-800 shadow-xl flex items-center justify-center">
+                    {/* 1.3 inch css display */}
+                    <img 
+                        src={src} 
+                        alt="Preview" 
+                        style={{ 
+                            width: '1.3in', 
+                            height: '1.3in', 
+                            imageRendering: 'pixelated' 
+                        }} 
+                        className="bg-black block"
+                    />
+                    
+                    {/* Screen Glare effect */}
+                    <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent pointer-events-none" />
+                </div>
+
+                <div className="text-xs text-gray-600 text-center max-w-[200px]">
+                    *此大小為 CSS 1.3in，實際物理尺寸可能因螢幕解析度而異。
+                </div>
+
+                <Button variant="secondary" onClick={() => setShowPreview(false)} className="w-full">
+                    關閉預覽
+                </Button>
+            </div>
+        </div>
+      )}
+    </>
   );
 };
