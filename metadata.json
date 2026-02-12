@@ -1,0 +1,5 @@
+{
+  "name": "PixelCraft AI",
+  "description": "使用 Canvas 演算法將照片瞬間轉換為 16x16 像素藝術，或使用 Gemini AI 生成新的像素藝術。",
+  "requestFramePermissions": []
+}
