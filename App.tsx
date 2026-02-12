@@ -13,13 +13,18 @@ import {
 import { 
   Grid3X3, 
   RefreshCcw,
-  Maximize
+  Maximize,
+  ChevronDown,
+  Sliders
 } from 'lucide-react';
 
 const App: React.FC = () => {
   // State
   const [originalImage, setOriginalImage] = useState<string | null>(null);
   const [pixelatedSrc, setPixelatedSrc] = useState<string | null>(null);
+  
+  // Settings Panel State (Mobile)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
   const [settings, setSettings] = useState<PixelSettings>({
     gridSize: DEFAULT_GRID_SIZE,
@@ -42,6 +47,7 @@ const App: React.FC = () => {
       if (e.target?.result) {
         setOriginalImage(e.target.result as string);
         setTransform({ x: 0, y: 0, scale: 1 }); // Reset transform
+        setIsSettingsOpen(false); // Auto-collapse on mobile when new image loads
       }
     };
     reader.readAsDataURL(file);
@@ -92,15 +98,35 @@ const App: React.FC = () => {
       <main className="w-full max-w-6xl bg-gray-900/50 backdrop-blur-sm rounded-3xl border border-gray-800 shadow-2xl overflow-hidden flex flex-col md:flex-row flex-1 min-h-0">
         
         {/* Left Sidebar: Controls */}
-        <div className="w-full md:w-80 lg:w-96 p-5 border-b md:border-b-0 md:border-r border-gray-800 flex flex-col gap-5 bg-gray-900/80 overflow-y-auto">
+        <div className="w-full md:w-80 lg:w-96 border-b md:border-b-0 md:border-r border-gray-800 bg-gray-900/80 flex flex-col flex-shrink-0 transition-all duration-300">
             
-            <div className="flex flex-col gap-5 pb-2">
-                <div className="flex items-center gap-2 pb-4 border-b border-gray-800">
-                    <span className="text-sm font-semibold text-gray-200">參數設定</span>
+            {/* Toggle Header (Always visible) */}
+            <button 
+                className="w-full p-4 flex items-center justify-between md:cursor-default hover:bg-gray-800/50 md:hover:bg-transparent transition-colors outline-none"
+                onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                type="button"
+            >
+                <div className="flex items-center gap-2 text-sm font-semibold text-gray-200">
+                    <Sliders size={18} className="text-indigo-400" />
+                    <span>參數設定</span>
                 </div>
+                {/* Chevron: Only visible on mobile */}
+                <ChevronDown 
+                    size={18} 
+                    className={`text-gray-400 md:hidden transition-transform duration-300 ${isSettingsOpen ? 'rotate-180' : ''}`} 
+                />
+            </button>
 
+            {/* Collapsible Content */}
+            <div className={`
+                flex flex-col gap-5 px-5
+                overflow-y-auto
+                transition-all duration-300 ease-in-out
+                ${isSettingsOpen ? 'max-h-[60vh] pb-5 opacity-100' : 'max-h-0 opacity-0 md:max-h-full md:opacity-100 md:pb-5'}
+            `}>
+                
                 {/* Settings Panel */}
-                <div className="space-y-5">
+                <div className="space-y-5 pt-1">
                     <Slider 
                         label="網格大小" 
                         value={settings.gridSize} 
@@ -110,14 +136,14 @@ const App: React.FC = () => {
                         onChange={(val) => setSettings(s => ({...s, gridSize: val}))}
                         unit="px"
                     />
-                        <Slider 
+                    <Slider 
                         label="對比度" 
                         value={settings.contrast} 
                         min={-50} 
                         max={50} 
                         onChange={(val) => setSettings(s => ({...s, contrast: val}))}
                     />
-                        <Slider 
+                    <Slider 
                         label="飽和度" 
                         value={settings.saturation} 
                         min={-50} 
@@ -168,19 +194,21 @@ const App: React.FC = () => {
         </div>
 
         {/* Right Area: Workspace */}
-        <div className="flex-1 p-6 bg-black/20 flex flex-col items-center justify-center relative overflow-hidden">
-            {originalImage && pixelatedSrc ? (
-                 <PixelPreview 
-                    src={pixelatedSrc} 
-                    gridSize={settings.gridSize} 
-                    showGrid={settings.showGrid}
-                    onTransformChange={setTransform}
-                />
-            ) : (
-                <div className="w-full max-w-md">
-                     <UploadZone onImageSelected={handleImageSelected} />
-                </div>
-            )}
+        <div className="flex-1 bg-black/20 relative overflow-y-auto overflow-x-hidden">
+            <div className="min-h-full w-full flex flex-col items-center justify-center p-6">
+                {originalImage && pixelatedSrc ? (
+                    <PixelPreview 
+                        src={pixelatedSrc} 
+                        gridSize={settings.gridSize} 
+                        showGrid={settings.showGrid}
+                        onTransformChange={setTransform}
+                    />
+                ) : (
+                    <div className="w-full max-w-md">
+                        <UploadZone onImageSelected={handleImageSelected} />
+                    </div>
+                )}
+            </div>
         </div>
 
       </main>

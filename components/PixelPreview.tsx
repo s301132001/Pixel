@@ -147,7 +147,7 @@ export const PixelPreview: React.FC<PixelPreviewProps> = ({
             <canvas ref={canvasRef} className="relative z-10 block max-w-full pointer-events-none" style={{ imageRendering: 'pixelated' }} />
         </div>
 
-        <div className="flex gap-3 mt-6">
+        <div className="flex flex-wrap justify-center gap-3 mt-6 w-full">
           <Button 
               variant="ghost" 
               size="sm" 
