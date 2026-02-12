@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Download, Move, ZoomIn, Eye, X } from 'lucide-react';
+import { Download, Move, ZoomIn, Eye, X, Save, Share2 } from 'lucide-react';
 import { Button } from './Button';
 import { downloadImage } from '../utils/imageUtils';
 import { ImageTransform } from '../types';
@@ -24,6 +24,9 @@ export const PixelPreview: React.FC<PixelPreviewProps> = ({
   const lastTouchRef = useRef<{x: number, y: number} | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  
+  // State for the Export/Save Modal
+  const [exportData, setExportData] = useState<{url: string, scale: number} | null>(null);
 
   // Drawing Logic
   useEffect(() => {
@@ -137,7 +140,7 @@ export const PixelPreview: React.FC<PixelPreviewProps> = ({
     lastTouchRef.current = null;
   };
 
-  const handleDownload = (downloadScale: number) => {
+  const generateExportImage = (downloadScale: number) => {
     if (!src) return;
     const tempCanvas = document.createElement('canvas');
     const finalSize = gridSize * downloadScale; 
@@ -150,9 +153,18 @@ export const PixelPreview: React.FC<PixelPreviewProps> = ({
         img.onload = () => {
             tCtx.imageSmoothingEnabled = false;
             tCtx.drawImage(img, 0, 0, finalSize, finalSize);
-            downloadImage(tempCanvas.toDataURL('image/png'), `pixel-art-${gridSize}x${gridSize}.png`);
+            setExportData({
+                url: tempCanvas.toDataURL('image/png'),
+                scale: downloadScale
+            });
         };
     }
+  };
+
+  const triggerDownload = () => {
+      if (exportData) {
+          downloadImage(exportData.url, `pixel-art-${gridSize}x${gridSize}.png`);
+      }
   };
 
   return (
@@ -219,18 +231,18 @@ export const PixelPreview: React.FC<PixelPreviewProps> = ({
           <Button 
               variant="secondary" 
               size="sm" 
-              onClick={() => handleDownload(1)}
-              icon={<Download size={16}/>}
+              onClick={() => generateExportImage(1)}
+              icon={<Save size={16}/>}
           >
-              小圖 (1x)
+              保存 (1x)
           </Button>
           <Button 
               variant="primary" 
               size="sm" 
-              onClick={() => handleDownload(32)}
-              icon={<Download size={16}/>}
+              onClick={() => generateExportImage(32)}
+              icon={<Save size={16}/>}
           >
-              高清 (32x)
+              保存 (32x)
           </Button>
         </div>
       </div>
@@ -278,6 +290,63 @@ export const PixelPreview: React.FC<PixelPreviewProps> = ({
 
                 <Button variant="secondary" onClick={() => setShowPreview(false)} className="w-full">
                     關閉預覽
+                </Button>
+            </div>
+        </div>
+      )}
+
+      {/* Export/Save Image Modal */}
+      {exportData && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4" onClick={() => setExportData(null)}>
+            <div 
+                className="bg-gray-900 border border-gray-700 rounded-2xl p-6 flex flex-col items-center gap-5 shadow-2xl relative max-w-sm w-full animate-in fade-in zoom-in-95 duration-200" 
+                onClick={e => e.stopPropagation()}
+            >
+                <button 
+                    onClick={() => setExportData(null)}
+                    className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors"
+                >
+                    <X size={20} />
+                </button>
+                
+                <div className="text-center space-y-1">
+                    <h3 className="text-xl font-bold text-white font-pixel tracking-wide flex items-center justify-center gap-2">
+                        <Share2 size={20} />
+                        儲存圖片
+                    </h3>
+                    <p className="text-gray-400 text-sm">
+                        手機請<span className="text-indigo-400 font-bold">長按圖片</span>加入照片
+                    </p>
+                </div>
+
+                <div className="relative w-full aspect-square bg-[#1a1b26] rounded-lg border-2 border-dashed border-gray-700 flex items-center justify-center p-2 overflow-hidden group">
+                     {/* Background checker */}
+                    <div className="absolute inset-0 opacity-20 pointer-events-none" 
+                        style={{
+                            backgroundImage: 'linear-gradient(45deg, #333 25%, transparent 25%), linear-gradient(-45deg, #333 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #333 75%), linear-gradient(-45deg, transparent 75%, #333 75%)',
+                            backgroundSize: '20px 20px'
+                        }} 
+                    />
+                    
+                    <img 
+                        src={exportData.url} 
+                        alt="Pixel Art Output" 
+                        className="max-w-full max-h-full object-contain shadow-lg relative z-10"
+                        style={{ 
+                            imageRendering: 'pixelated',
+                            // If scale is 1 (tiny image), force a minimum display size for easier tapping
+                            width: exportData.scale === 1 ? '128px' : 'auto' 
+                        }}
+                    />
+                </div>
+
+                <Button 
+                    variant="primary" 
+                    onClick={triggerDownload} 
+                    className="w-full"
+                    icon={<Download size={16} />}
+                >
+                    下載檔案
                 </Button>
             </div>
         </div>
