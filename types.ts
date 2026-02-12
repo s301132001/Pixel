@@ -11,8 +11,3 @@ export interface ImageTransform {
   y: number;
   scale: number;
 }
-
-export enum Tab {
-  UPLOAD = 'UPLOAD',
-  GENERATE = 'GENERATE'
-}
