@@ -38,25 +38,28 @@ export const pixelateImage = (
         const saturateVal = 100 + saturation;
         ctx.filter = `contrast(${contrastVal}%) saturate(${saturateVal}%)`;
 
-        // 2. Calculate Source Rectangle (Cropping logic)
-        // The logic here essentially creates a "camera" view into the original image.
+        // 2. Calculate Source Square (Cropping logic)
+        // To prevent distortion (stretching) on non-square images, we must sample a square area 
+        // from the source image because the destination (gridSize x gridSize) is square.
         
-        // sWidth/sHeight is the size of the area in the source image we want to see.
-        // If scale is 2, we only see half the width/height of the original.
-        const sWidth = img.width / transform.scale;
-        const sHeight = img.height / transform.scale;
+        // We use the smaller dimension of the image to define the "scale 1" viewport size.
+        // This ensures the initial view covers the viewport without transparent bars (Crop to fit).
+        const size = Math.min(img.width, img.height) / transform.scale;
 
-        // sx/sy is the top-left coordinate of the source rectangle.
-        // We start centered ((img.width - sWidth) / 2) and subtract the offset (x, y).
-        // Subtracting offset makes dragging feel natural (drag mouse right -> image moves right, which means camera moves left)
-        const sx = (img.width - sWidth) / 2 - transform.x;
-        const sy = (img.height - sHeight) / 2 - transform.y;
+        // Calculate center of the image
+        const cx = img.width / 2;
+        const cy = img.height / 2;
+
+        // Calculate top-left of the source crop area based on center and transform offsets.
+        // Subtracting offset makes dragging feel natural.
+        const sx = cx - (size / 2) - transform.x;
+        const sy = cy - (size / 2) - transform.y;
 
         // 3. Draw cropped image scaled into gridSize x gridSize
         ctx.drawImage(
             img, 
-            sx, sy, sWidth, sHeight,  // Source rectangle (crop)
-            0, 0, gridSize, gridSize  // Destination rectangle (output)
+            sx, sy, size, size,       // Source rectangle (Square crop)
+            0, 0, gridSize, gridSize  // Destination rectangle (Square)
         );
 
         // 4. Get the data URL of the tiny 16x16 image
