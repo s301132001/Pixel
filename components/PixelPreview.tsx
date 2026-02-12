@@ -21,6 +21,7 @@ export const PixelPreview: React.FC<PixelPreviewProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const lastTouchRef = useRef<{x: number, y: number} | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
@@ -65,7 +66,7 @@ export const PixelPreview: React.FC<PixelPreviewProps> = ({
     };
   }, [src, gridSize, showGrid]);
 
-  // Interaction Handlers
+  // Mouse Interaction Handlers
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     // Zoom Logic
@@ -74,7 +75,7 @@ export const PixelPreview: React.FC<PixelPreviewProps> = ({
 
     onTransformChange(prev => ({
         ...prev,
-        scale: Math.max(0.1, Math.min(prev.scale + delta * prev.scale * 5, 20))
+        scale: Math.max(0.5, Math.min(prev.scale + delta * prev.scale * 5, 10))
     }));
   };
 
@@ -101,6 +102,39 @@ export const PixelPreview: React.FC<PixelPreviewProps> = ({
         x: prev.x + e.movementX * sensitivity / prev.scale,
         y: prev.y + e.movementY * sensitivity / prev.scale
     }));
+  };
+
+  // Touch Interaction Handlers (For Mobile)
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+        setIsDragging(true);
+        lastTouchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging || !lastTouchRef.current) return;
+    // Prevent default to avoid scrolling the page while panning
+    if (e.cancelable) e.preventDefault();
+
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - lastTouchRef.current.x;
+    const deltaY = touch.clientY - lastTouchRef.current.y;
+    
+    lastTouchRef.current = { x: touch.clientX, y: touch.clientY };
+
+    const sensitivity = 2;
+
+    onTransformChange(prev => ({
+        ...prev,
+        x: prev.x + deltaX * sensitivity / prev.scale,
+        y: prev.y + deltaY * sensitivity / prev.scale
+    }));
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    lastTouchRef.current = null;
   };
 
   const handleDownload = (downloadScale: number) => {
@@ -137,6 +171,9 @@ export const PixelPreview: React.FC<PixelPreviewProps> = ({
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseLeave}
           onMouseMove={handleMouseMove}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
             {/* Checkerboard background */}
             <div className="absolute inset-0 opacity-20 pointer-events-none" 
@@ -154,8 +191,8 @@ export const PixelPreview: React.FC<PixelPreviewProps> = ({
             <ZoomIn size={16} className="text-gray-400 flex-shrink-0" />
             <input
                 type="range"
-                min="0.1"
-                max="20"
+                min="0.5"
+                max="10"
                 step="0.1"
                 value={scale}
                 onChange={(e) => {
