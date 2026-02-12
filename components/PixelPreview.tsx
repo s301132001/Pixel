@@ -8,6 +8,7 @@ interface PixelPreviewProps {
   src: string;
   gridSize: number;
   showGrid: boolean;
+  scale: number;
   onTransformChange: (updater: (prev: ImageTransform) => ImageTransform) => void;
 }
 
@@ -15,6 +16,7 @@ export const PixelPreview: React.FC<PixelPreviewProps> = ({
     src, 
     gridSize, 
     showGrid,
+    scale,
     onTransformChange
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -101,10 +103,10 @@ export const PixelPreview: React.FC<PixelPreviewProps> = ({
     }));
   };
 
-  const handleDownload = (scale: number) => {
+  const handleDownload = (downloadScale: number) => {
     if (!src) return;
     const tempCanvas = document.createElement('canvas');
-    const finalSize = gridSize * scale; 
+    const finalSize = gridSize * downloadScale; 
     tempCanvas.width = finalSize;
     tempCanvas.height = finalSize;
     const tCtx = tempCanvas.getContext('2d');
@@ -121,15 +123,15 @@ export const PixelPreview: React.FC<PixelPreviewProps> = ({
 
   return (
     <>
-      <div className="flex flex-col items-center w-full" ref={containerRef}>
+      <div className="flex flex-col items-center w-full max-w-[512px]" ref={containerRef}>
         <div className="flex items-center gap-2 mb-2 text-xs text-gray-400">
            <Move size={12} /> <span>拖曳移動</span>
            <span className="mx-1">|</span>
-           <ZoomIn size={12} /> <span>滾輪縮放</span>
+           <ZoomIn size={12} /> <span>縮放調整</span>
         </div>
         
         <div 
-          className={`relative rounded-lg overflow-hidden shadow-2xl shadow-indigo-500/20 bg-[#1a1b26] border border-gray-800 touch-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+          className={`relative rounded-lg overflow-hidden shadow-2xl shadow-indigo-500/20 bg-[#1a1b26] border border-gray-800 touch-none w-full aspect-square ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
           onWheel={handleWheel}
           onMouseDown={handleMouseDown}
           onMouseUp={handleMouseUp}
@@ -144,10 +146,30 @@ export const PixelPreview: React.FC<PixelPreviewProps> = ({
                     backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
                 }} 
             />
-            <canvas ref={canvasRef} className="relative z-10 block max-w-full pointer-events-none" style={{ imageRendering: 'pixelated' }} />
+            <canvas ref={canvasRef} className="relative z-10 block w-full h-full pointer-events-none" style={{ imageRendering: 'pixelated' }} />
         </div>
 
-        <div className="flex flex-wrap justify-center gap-3 mt-6 w-full">
+        {/* Zoom Slider Control */}
+        <div className="w-full flex items-center gap-3 mt-4 px-2 py-2 bg-gray-900/50 rounded-lg border border-gray-800">
+            <ZoomIn size={16} className="text-gray-400 flex-shrink-0" />
+            <input
+                type="range"
+                min="0.1"
+                max="20"
+                step="0.1"
+                value={scale}
+                onChange={(e) => {
+                    const newScale = parseFloat(e.target.value);
+                    onTransformChange(prev => ({ ...prev, scale: newScale }));
+                }}
+                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-500 hover:accent-indigo-400"
+            />
+            <span className="text-xs font-mono text-gray-400 w-12 text-right flex-shrink-0">
+                {scale.toFixed(1)}x
+            </span>
+        </div>
+
+        <div className="flex flex-wrap justify-center gap-3 mt-4 w-full">
           <Button 
               variant="ghost" 
               size="sm" 
@@ -155,7 +177,7 @@ export const PixelPreview: React.FC<PixelPreviewProps> = ({
               icon={<Eye size={16}/>}
               className="bg-gray-800/50 text-indigo-300 hover:bg-gray-800 hover:text-indigo-200"
           >
-              預覽 (1.3")
+              預覽
           </Button>
           <Button 
               variant="secondary" 

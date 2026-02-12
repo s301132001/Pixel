@@ -201,6 +201,7 @@ const App: React.FC = () => {
                         src={pixelatedSrc} 
                         gridSize={settings.gridSize} 
                         showGrid={settings.showGrid}
+                        scale={transform.scale}
                         onTransformChange={setTransform}
                     />
                 ) : (
